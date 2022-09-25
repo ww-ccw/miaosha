@@ -1,0 +1,69 @@
+spring:
+  #thymeleaf
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    cache: false
+    servlet:
+      content-type: text/html
+    enabled: true
+    encoding: UTF-8
+    mode: HTML5
+
+  rabbitmq:
+    host: 192.168.109.128
+    port: 5673
+
+  redis:
+    host: 192.168.109.128
+    port: 6379
+    database: 10
+    password: root
+    timeout: 1000
+    jedis:
+      pool:
+        max-active: 1000
+        max-idle: 20
+        max-wait: 10000
+  #静态资源路径
+  resources:
+    static-locations: classpath:/static/
+
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/ms_v2?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false
+    username: root
+    password: root
+    druid:
+      #配置初始化大小、最小、最大线程数
+      initialSize: 5
+      minIdle: 5
+      #CPU核数+1，也可以大些但不要超过20，数据库加锁时连接过多性能下降
+      maxActive: 20
+      #最大等待时间，内网：800，外网：1200（三次握手1s）
+      maxWait: 60000
+      timeBetweenEvictionRunsMillis: 60000
+      #配置一个连接在池中最大空间时间，单位是毫秒
+      minEvictableIdleTimeMillis: 300000
+      validationQuery: SELECT 1
+      testWhileIdle: true
+      #设置从连接池获取连接时是否检查连接有效性，true检查，false不检查
+      testOnBorrow: true
+      #设置从连接池归还连接时是否检查连接有效性，true检查，false不检查
+      testOnReturn: true
+      #可以支持PSCache（提升写入、查询效率）
+      poolPreparedStatements: true
+      #保持长连接
+      keepAlive: true
+      maxPoolPreparedStatementPerConnectionSize: 20
+      useGlobalDataSourceStat: true
+      connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=500
+      db-type: com.alibaba.druid.pool.DruidDataSource
+
+mybatis:
+  mapper-locations: classpath:/mapper/*.xml
+  type-aliases-package: com.chw.miaosha.domain
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    #开启驼峰命名转换
+    mapUnderscoreToCamelCase: true
