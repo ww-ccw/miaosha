@@ -47,6 +47,11 @@ public enum TimeEnum {
      */
     User_Token(3600 * 3),
     
+    /**
+     * 商品详情
+     */
+    Goods_detail(3600 * 2),
+    
     ;
     
     
