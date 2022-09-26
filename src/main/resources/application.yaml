@@ -27,7 +27,15 @@ spring:
         max-wait: 10000
   #静态资源路径
   resources:
-    static-locations: classpath:/static/
+    static-locations: classpath:/static/    #静态资源路径
+    add-mappings: true                      #添加映射
+    cache:
+      period: 3600                          #在浏览器缓存中存活时间
+    chain:
+      cache: true
+      enabled: true
+      html-application-cache: true
+
 
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
@@ -59,6 +67,9 @@ spring:
       useGlobalDataSourceStat: true
       connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=500
       db-type: com.alibaba.druid.pool.DruidDataSource
+
+
+
 
 mybatis:
   mapper-locations: classpath:/mapper/*.xml
