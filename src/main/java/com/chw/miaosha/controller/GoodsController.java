@@ -47,7 +47,7 @@ public class GoodsController {
      * Win qbs 372
      */
     @RequestMapping(value = "/to_list-", method = RequestMethod.GET)
-    public String DbList(Model model, User user) {
+    public String dbList(Model model, User user) {
         
         model.addAttribute("user", user);
         List<GoodsVo> goodsList = goodsService.listGoodsVo();
@@ -58,13 +58,13 @@ public class GoodsController {
     
     
     /**
-     * 页面静态化
+     * 页面缓存
      * 从redis中得到商品列表
      * Win qbs 2760
      */
     @RequestMapping(value = "/to_list", produces = "text/html;charset=utf-8", method = RequestMethod.GET)
     @ResponseBody
-    public String CacheList(HttpServletRequest request, HttpServletResponse response, Model model, User user) {
+    public String cacheList(HttpServletRequest request, HttpServletResponse response, Model model, User user) {
         
         //从redis中取goodList，如果不为空直接返回
         String html = redisService.get("goods_list");
@@ -90,19 +90,12 @@ public class GoodsController {
     }
     
     /**
-     * 页面静态化从redis取商品详情
+     * 页面缓存从redis取商品详情
      * qbs 3142
-     *
-     * @param request
-     * @param response
-     * @param model
-     * @param user
-     * @param goodsId
-     * @return
      */
-    @RequestMapping(value = "/detail/{goodsId}", produces = "text/html;charset=utf-8", method = RequestMethod.GET)
+    @RequestMapping(value = "/detail--/{goodsId}", produces = "text/html;charset=utf-8", method = RequestMethod.GET)
     @ResponseBody
-    public String CacheDetail(HttpServletRequest request, HttpServletResponse response, Model model, User user,
+    public String cacheDetail(HttpServletRequest request, HttpServletResponse response, Model model, User user,
                          @PathVariable("goodsId") long goodsId) {
         
         String html = redisService.get(Prefix.Redis_GoodsDetailVo.getPrefix() + goodsId);
@@ -168,16 +161,9 @@ public class GoodsController {
     /**
      * 从数据库中取商品的详情
      * qbs 325
-     *
-     * @param request
-     * @param response
-     * @param model
-     * @param user
-     * @param goodsId
-     * @return
      */
     @RequestMapping(value = "/detail-/{goodsId}", method = RequestMethod.GET)
-    public String DBDetail(HttpServletRequest request, HttpServletResponse response, Model model, User user,
+    public String dbDetail(HttpServletRequest request, HttpServletResponse response, Model model, User user,
                            @PathVariable("goodsId") long goodsId) {
         
         GoodsVo goodsVo = goodsService.getGoodsVoByGoodsId(goodsId);
@@ -212,6 +198,44 @@ public class GoodsController {
         model.addAttribute("remainSeconds", remainSeconds);
         
         return "goods_detail";
+    }
+    
+    /**
+     * 页面静态化 。
+     * 跳转的页面是goods_detail.htm，在这个页面中通过ajax请求数据
+     * 需要更改goods_list页面。
+     */
+    @RequestMapping(value = "/detail/{goodsId}" , method = RequestMethod.GET)
+    @ResponseBody
+    public Result<GoodsDetailVo> staticDetail(HttpServletRequest request, HttpServletResponse response, Model model, User user,
+                               @PathVariable("goodsId") long goodsId){
+        GoodsVo goodsVo =goodsService.getGoodsVoByGoodsId(goodsId);
+        long startAt = goodsVo.getStartDate().getTime();
+        long endAt = goodsVo.getEndDate().getTime();
+        long now = System.currentTimeMillis();
+        int miaoshaStatus = 0;
+        int remainSeconds = 0;
+    
+        if(now < startAt ) {
+            //秒杀还没开始，倒计时
+            miaoshaStatus = 0;
+            remainSeconds = (int)((startAt - now )/1000);
+        }else  if(now > endAt){
+            //秒杀已经结束
+            miaoshaStatus = 2;
+            remainSeconds = -1;
+        }else {//秒杀进行中
+            miaoshaStatus = 1;
+            remainSeconds = 0;
+        }
+    
+        GoodsDetailVo vo = new GoodsDetailVo();
+        vo.setGoods(goodsVo);
+        vo.setUser(user);
+        vo.setRemainSeconds(remainSeconds);
+        vo.setMiaoshaStatus(miaoshaStatus);
+        return Result.success(vo);
+        
     }
     
 }

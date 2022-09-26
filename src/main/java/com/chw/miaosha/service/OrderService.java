@@ -15,6 +15,7 @@ public interface OrderService {
     
     /**
      * 创建订单
+     *
      * @param user
      * @param goods
      * @return
@@ -23,10 +24,18 @@ public interface OrderService {
     
     /**
      * 从redis中得到秒杀订单
+     *
      * @param userId
      * @param goodsId
      * @return
      */
     public MiaoShaOrder getMiaoshaOrderByUserIdGoodsId(long userId, long goodsId);
+    
+    /**
+     * 从数据库中得到订单信息
+     * @param orderId
+     * @return
+     */
+    public OrderInfo getOrderById(long orderId);
     
 }

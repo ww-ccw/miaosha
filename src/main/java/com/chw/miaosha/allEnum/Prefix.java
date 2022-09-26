@@ -19,18 +19,25 @@ public enum Prefix {
     /**
      * 用于向redis中添加token_user
      */
-    TOKEN_USER("token_user"),
+    TOKEN_USER("token_user_"),
     
     /**
      * 商品详情
      */
-    Redis_GoodsDetailVo("goodsDetailVo"),
+    Redis_GoodsDetailVo("goodsDetailVo_"),
     
     /**
      * 用户订单信息
+     * user_order_+userId+goodsId
      */
     
-    User_Order("user_order"),
+    User_Order("user_order_"),
+    
+    /**
+     * 商品售空
+     * goods_over_ + id
+     */
+    Goods_Over("goods_over_"),
     
     ;
     

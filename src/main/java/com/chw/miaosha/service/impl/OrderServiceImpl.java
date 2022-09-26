@@ -53,18 +53,25 @@ public class OrderServiceImpl implements OrderService {
         //将秒杀订单信息存入数据库
         orderDao.insertMiaoshaOrder(miaoShaOrder);
         //将秒杀订单信息传入redis
-        redisService.set(Prefix.User_Order.getPrefix()+"_"+user.getId() + "_" + goods.getId(), miaoShaOrder, TimeEnum.UserOrderTime.getTime());
+        redisService.set(Prefix.User_Order.getPrefix() + user.getId() + "_" + goods.getId(), miaoShaOrder, TimeEnum.UserOrderTime.getTime());
         
         return orderInfo;
     }
     
     @Override
     public MiaoShaOrder getMiaoshaOrderByUserIdGoodsId(long userId, long goodsId) {
-        String json = redisService.get(Prefix.User_Order.getPrefix()+"_"+userId + "_" + goodsId);
+        String json = redisService.get(Prefix.User_Order.getPrefix() + userId + "_" + goodsId);
         MiaoShaOrder miaoShaOrder = null;
         if (!StringUtils.isEmpty(json)) {
             miaoShaOrder = JsonUtil.jsonToObject(json, MiaoShaOrder.class);
         }
         return miaoShaOrder;
     }
+    
+    @Override
+    public OrderInfo getOrderById(long orderId){
+        return orderDao.getOrderById(orderId);
+    }
+    
+    
 }

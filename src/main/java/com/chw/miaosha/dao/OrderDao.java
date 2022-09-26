@@ -3,6 +3,7 @@ package com.chw.miaosha.dao;
 import com.chw.miaosha.domain.MiaoShaOrder;
 import com.chw.miaosha.domain.OrderInfo;
 import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.SelectKey;
 
 /**
@@ -30,5 +31,11 @@ public interface OrderDao {
     @Insert("insert into miaosha_order (user_id, goods_id, order_id)values(#{userId}, #{goodsId}, #{orderId})")
     int insertMiaoshaOrder(MiaoShaOrder miaoshaOrder);
     
-    
+    /**
+     * 得到订单信息
+     * @param orderId
+     * @return
+     */
+    @Select("select * from order_info where id = #{orderId}")
+    OrderInfo getOrderById(long orderId);
 }
