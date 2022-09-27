@@ -1,11 +1,11 @@
 package com.chw.miaosha.rabbitmq;
 
+
 import com.chw.miaosha.domain.MiaoShaOrder;
 import com.chw.miaosha.domain.User;
 import com.chw.miaosha.service.GoodsService;
 import com.chw.miaosha.service.MiaoShaService;
 import com.chw.miaosha.service.OrderService;
-import com.chw.miaosha.service.RedisService;
 import com.chw.miaosha.util.JsonUtil;
 import com.chw.miaosha.vo.GoodsVo;
 import lombok.extern.log4j.Log4j2;
@@ -17,14 +17,11 @@ import javax.annotation.Resource;
 /**
  * @Author CHW
  * @Date 2022/9/24
- * MQ信息接收者 负责将信息传给MQ消费者
+ * MQ消费者 负责处理消息
  **/
 @Service
 @Log4j2
 public class MQReceiver {
-    
-    @Resource
-    RedisService redisService;
     
     @Resource
     GoodsService goodsService;
@@ -35,9 +32,10 @@ public class MQReceiver {
     @Resource
     MiaoShaService miaoShaService;
     
-    @RabbitListener(queues = "" + MQConfig.MIAOSHA_QUEUE)
-    public void receive(String message) {
+    @RabbitListener(queues = MQConfig.QUEUE)
+    public void receive (String message ) {
         log.info("MQ ---> " + "receive message" + message);
+        //收到消息 解析参数
         MiaoShaMessage mm = JsonUtil.jsonToObject(message, MiaoShaMessage.class);
         User user = mm.getUser();
         long goodsId = mm.getGoodsId();
@@ -57,6 +55,6 @@ public class MQReceiver {
         //减库存 下订单 写入秒杀订单
         miaoShaService.miaoSha(user , goodsVo);
     }
-    
+
     
 }

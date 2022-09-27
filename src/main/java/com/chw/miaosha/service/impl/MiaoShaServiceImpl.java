@@ -2,6 +2,7 @@ package com.chw.miaosha.service.impl;
 
 import com.chw.miaosha.allEnum.Prefix;
 import com.chw.miaosha.allEnum.TimeEnum;
+import com.chw.miaosha.domain.MiaoShaOrder;
 import com.chw.miaosha.domain.OrderInfo;
 import com.chw.miaosha.domain.User;
 import com.chw.miaosha.service.GoodsService;
@@ -46,13 +47,33 @@ public class MiaoShaServiceImpl implements MiaoShaService {
         
     }
     
+    @Override
+    public long getMiaoShaResult(Long id, long goodsId) {
+        MiaoShaOrder order = orderService.getMiaoshaOrderByUserIdGoodsId(id, goodsId);
+        if (order != null) {
+            //秒杀成功
+            return order.getOrderId();
+        } else {
+            //判断商品是否售空
+            boolean isOver = getGoodsOver(goodsId);
+            if (isOver){
+                return -1;
+            }else {
+                return 0;
+            }
+        }
+    }
+    
     /**
      * 将商品售空的信息存入redis
+     *
      * @param goodsId
      */
     private void setGoodsOver(Long goodsId) {
-        
         redisService.set(Prefix.Goods_Over.getPrefix() + goodsId, true, TimeEnum.EXPIRE_ONE_DAY.getTime());
     }
     
+    private boolean getGoodsOver(long goodsId) {
+        return redisService.exists(Prefix.Goods_Over.getPrefix() + goodsId );
+    }
 }

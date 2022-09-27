@@ -26,7 +26,7 @@ public class MQSender {
     public void sendMiaoShaMessage(MiaoShaMessage miaoshaMessage) {
         String msg = JsonUtil.objectToJson(miaoshaMessage);
         log.info("MQ ---> "+"send message: "+msg);
-        amqpTemplate.convertAndSend(MQConfig.MIAOSHA_QUEUE , msg);
+        amqpTemplate.convertAndSend(MQConfig.QUEUE , msg);
     }
     
     

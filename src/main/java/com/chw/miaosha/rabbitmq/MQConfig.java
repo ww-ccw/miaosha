@@ -1,9 +1,9 @@
 package com.chw.miaosha.rabbitmq;
 
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 import org.springframework.amqp.core.Queue;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 /**
  * @Author CHW
@@ -12,20 +12,11 @@ import org.springframework.amqp.core.Queue;
 @Configuration
 public class MQConfig {
     
-    public static final String MIAOSHA_QUEUE = "miaosha.queue";
-    public static final String QUEUE = "queue";
-    
-    /**
-     * Hello模式
-     */
+    public static final String QUEUE = "msQueue";
+
     @Bean
-    public Queue queue() {
+    public Queue msQueue() {
         return new Queue(QUEUE, true);
-    }
-    
-    @Bean
-    public Queue miaoShaQueue() {
-        return new Queue(MIAOSHA_QUEUE, true);
     }
     
     

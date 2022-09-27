@@ -25,4 +25,26 @@ public interface RedisService {
      * @return
      */
     public String get(String key);
+    
+    /**
+     * redis减操作
+     * @param key
+     * @return
+     */
+    public Long decr(String key);
+    
+    /**
+     * redis增操作
+     * @param key
+     * @return
+     */
+    public Long incr(String key);
+    
+    /**
+     * 判断key是否存在
+     * @param key
+     * @param <T>
+     * @return
+     */
+    public <T> boolean exists( String key);
 }

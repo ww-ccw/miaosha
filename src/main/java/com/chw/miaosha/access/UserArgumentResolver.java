@@ -56,9 +56,9 @@ public class UserArgumentResolver implements HandlerMethodArgumentResolver {
             return null;
         }
         User user = JsonUtil.jsonToObject(redisService.get(Prefix.TOKEN_USER.getPrefix() + token), User.class);
-//        if (user == null) {
-//            return "login";
-//        }
+        if (user == null) {
+            return null;
+        }
         UserContext.setUser(user);
         return user;
     }

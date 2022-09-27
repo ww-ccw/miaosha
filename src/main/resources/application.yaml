@@ -13,6 +13,23 @@ spring:
   rabbitmq:
     host: 192.168.109.128
     port: 5673
+    username: guest
+    password: guest
+    virtual-host: /
+    listener:
+      simple:
+        concurrency: 10         #消费者数量
+        max-concurrency: 10     #消费者最大数量
+        prefetch: 1             #每次只能处理1个消息
+        auto-startup: true      #默认启动容器
+        default-requeue-rejected: true    #消息被拒接时可以重新进入队列
+    template:
+      retry:
+        enabled: true         #开启重试
+        initial-interval: 1000ms    #重试等待时间
+        max-attempts: 3         #默认重试次数,默认三次
+        max-interval: 10000ms      #重试最大持续时间
+        multiplier: 1
 
   redis:
     host: 192.168.109.128

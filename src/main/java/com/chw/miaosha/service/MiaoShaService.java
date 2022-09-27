@@ -17,4 +17,12 @@ public interface MiaoShaService {
      * @param goodsVo
      */
     OrderInfo miaoSha(User user, GoodsVo goodsVo);
+    
+    /**
+     * 得到是否已经抢购成功
+     * @param id
+     * @param goodsId
+     * @return
+     */
+    long getMiaoShaResult(Long id, long goodsId);
 }

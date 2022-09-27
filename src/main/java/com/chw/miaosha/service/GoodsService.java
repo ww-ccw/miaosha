@@ -27,10 +27,33 @@ public interface GoodsService {
     public GoodsVo getGoodsVoByGoodsId(long goodsId);
     
     /**
-     * 减库存
+     * 从redis中获得商品库存
+     * @param goodsId
+     * @return
+     */
+    public Integer getStockCountByRedis(Long goodsId);
+    
+    
+    /**
+     * db减库存
      *
      * @param goods
      * @return
      */
     public boolean reduceStock(GoodsVo goods);
+    
+    /**
+     * 从redis中减库存
+     * @param goodsId
+     * @return
+     */
+    public long decrCount(long goodsId);
+    
+    /**
+     * 从redis中增加库存
+     * @param goodsId
+     * @return
+     */
+    public long incrCount(long goodsId);
+    
 }

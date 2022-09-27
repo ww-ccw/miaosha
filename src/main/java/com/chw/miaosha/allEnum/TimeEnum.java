@@ -52,6 +52,10 @@ public enum TimeEnum {
      */
     Goods_detail(3600 * 2),
     
+    /**
+     * 秒杀商品库存的
+     */
+    
     ;
     
     

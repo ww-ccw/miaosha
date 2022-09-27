@@ -39,6 +39,13 @@ public enum Prefix {
      */
     Goods_Over("goods_over_"),
     
+    /**
+     * 商品库存
+     * goods_stockCount_ + goodsId
+     */
+    Goods_StockCount("goods_stockCount_"),
+    
+    
     ;
     
     
