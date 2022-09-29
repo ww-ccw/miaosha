@@ -73,7 +73,7 @@ public class RedisServiceImpl implements RedisService {
     
     
     @Override
-    public Long incr(String key){
+    public Long incr(String key) {
         Long result;
         Jedis jedis = null;
         try {
@@ -86,13 +86,26 @@ public class RedisServiceImpl implements RedisService {
     }
     
     @Override
-    public <T> boolean exists( String key){
+    public <T> boolean exists(String key) {
         Jedis jedis = null;
         try {
-            jedis =  jedisPool.getResource();
-            return  jedis.exists(key);
-        }finally {
+            jedis = jedisPool.getResource();
+            return jedis.exists(key);
+        } finally {
             returnToPool(jedis);
         }
     }
+    
+    @Override
+    public long delete(String key){
+        Jedis jedis = null;
+        try {
+            jedis = jedisPool.getResource();
+            return jedis.del(key);
+        } finally {
+            returnToPool(jedis);
+        }
+    }
+    
+    
 }

@@ -47,4 +47,11 @@ public interface RedisService {
      * @return
      */
     public <T> boolean exists( String key);
+    
+    /**
+     * 删除自定数据
+     * @param key
+     * @return
+     */
+    long delete(String key);
 }

@@ -53,9 +53,19 @@ public enum TimeEnum {
     Goods_detail(3600 * 2),
     
     /**
-     * 秒杀商品库存的
+     * 秒杀接口保存时间
      */
+    Path(60),
     
+    /**
+     * 验证码保存时间
+     */
+    VerifyCode(60 * 5),
+    
+    /**
+     * 流量限制时间
+     */
+    access(60),
     ;
     
     

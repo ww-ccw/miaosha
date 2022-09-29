@@ -1,7 +1,6 @@
 package com.chw.miaosha.controller;
 
 import com.chw.miaosha.allEnum.Prefix;
-import com.chw.miaosha.domain.Goods;
 import com.chw.miaosha.domain.MiaoShaOrder;
 import com.chw.miaosha.domain.OrderInfo;
 import com.chw.miaosha.domain.User;
@@ -11,17 +10,19 @@ import com.chw.miaosha.result.CodeMsg;
 import com.chw.miaosha.result.Result;
 import com.chw.miaosha.service.*;
 import com.chw.miaosha.vo.GoodsVo;
+import com.google.common.util.concurrent.RateLimiter;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
-import java.util.Date;
+import javax.servlet.http.HttpServletResponse;
+import java.awt.image.BufferedImage;
+import java.io.OutputStream;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -47,6 +48,16 @@ public class MiaoShaController implements InitializingBean {
     @Resource
     MiaoShaService miaoShaService;
     
+    /**
+     * 用于保存商品是否售空,减少redis的访问
+     */
+    private HashMap<Long, Boolean> localOverMap = new HashMap<Long, Boolean>();
+    
+    /**
+     * 令牌桶，每秒放行10个请求
+     */
+    RateLimiter rateLimiter = RateLimiter.create(1000);
+    
     @Resource
     MQSender sender;
     
@@ -64,6 +75,7 @@ public class MiaoShaController implements InitializingBean {
         for (GoodsVo goodsVo : goodsVoList) {
             redisService.set(Prefix.Goods_StockCount.getPrefix() + goodsVo.getId(), goodsVo.getStockCount(), (int) (System
                     .currentTimeMillis() - goodsVo.getEndDate().getTime()) / 1000);
+            localOverMap.put(goodsVo.getId(), false);
         }
     }
     
@@ -111,17 +123,17 @@ public class MiaoShaController implements InitializingBean {
         if (user == null) {
             return Result.error(CodeMsg.NO_LOGIN);
         }
+        //判断是否已经秒杀成功
+        MiaoShaOrder miaoShaOrder = orderService.getMiaoshaOrderByUserIdGoodsId(user.getId(), goodsId);
+        if (miaoShaOrder != null) {
+            return Result.error(CodeMsg.REPEATE_ERROR);
+            
+        }
         //判断库存
         GoodsVo goodsVo = goodsService.getGoodsVoByGoodsId(goodsId);
         int count = goodsVo.getStockCount();
         if (count <= 0) {
             return Result.error(CodeMsg.EMPTY_STOCK);
-            
-        }
-        //判断是否已经秒杀成功
-        MiaoShaOrder miaoShaOrder = orderService.getMiaoshaOrderByUserIdGoodsId(user.getId(), goodsId);
-        if (miaoShaOrder != null) {
-            return Result.error(CodeMsg.REPEATE_ERROR);
             
         }
         //减库存 写订单 写入秒杀订单
@@ -136,7 +148,7 @@ public class MiaoShaController implements InitializingBean {
      * @param goodsId
      * @return
      */
-    @RequestMapping(value = "/do_miaosha" , method = RequestMethod.POST)
+    @RequestMapping(value = "/do_miaosha---", method = RequestMethod.POST)
     @ResponseBody
     public Result<Integer> mqMiaoSha(User user, @RequestParam(value = "goodsId") long goodsId) {
         
@@ -144,10 +156,57 @@ public class MiaoShaController implements InitializingBean {
             return Result.error(CodeMsg.NO_LOGIN);
         }
         //预减库存
+        
+        //判断是否已经秒杀成功
+        MiaoShaOrder miaoShaOrder = orderService.getMiaoshaOrderByUserIdGoodsId(user.getId(), goodsId);
+        if (miaoShaOrder != null) {
+            return Result.error(CodeMsg.REPEATE_ERROR);
+        }
+        
         long count = goodsService.decrCount(goodsId);
         if (count < 0) {
             //如果库存不足则手动回滚
             goodsService.incrCount(goodsId);
+            return Result.error(CodeMsg.EMPTY_STOCK);
+        }
+        //入队
+        MiaoShaMessage miaoShaMessage = new MiaoShaMessage();
+        miaoShaMessage.setUser(user);
+        miaoShaMessage.setGoodsId(goodsId);
+        sender.sendMiaoShaMessage(miaoShaMessage);
+        //派对中
+        return Result.success(0);
+    }
+    
+    /**
+     * 在页面初始化的时候生成验证码图片，并将结果存入redis
+     * <p>
+     * 通过生成的path携带验证码进行秒杀
+     * <p>
+     * 验证path和验证码后入队秒杀
+     *
+     * @param user
+     * @param goodsId
+     * @param path
+     * @return
+     */
+    @RequestMapping("/{path}/do_miaosha")
+    @ResponseBody
+    public Result<Integer> pathMiaoSha(User user, @RequestParam(value = "goodsId") long goodsId,
+                                       @PathVariable String path) {
+        
+        if (user == null) {
+            return Result.error(CodeMsg.NO_LOGIN);
+        }
+        //验证path
+        boolean check = miaoShaService.checkPath(user, goodsId, path);
+        if (!check) {
+            return Result.error(CodeMsg.ERROR_CAPTCHA);
+        }
+        
+        //内存标记，减少redis访问
+        boolean over = localOverMap.get(goodsId);
+        if (over) {
             return Result.error(CodeMsg.EMPTY_STOCK);
         }
         
@@ -156,6 +215,17 @@ public class MiaoShaController implements InitializingBean {
         if (miaoShaOrder != null) {
             return Result.error(CodeMsg.REPEATE_ERROR);
         }
+        
+        //预减库存
+        long count = goodsService.decrCount(goodsId);
+        if (count < 0) {
+            localOverMap.put(goodsId, true);
+            //如果库存不足则手动回滚
+            goodsService.incrCount(goodsId);
+            return Result.error(CodeMsg.EMPTY_STOCK);
+        }
+        
+        
         //入队
         MiaoShaMessage miaoShaMessage = new MiaoShaMessage();
         miaoShaMessage.setUser(user);
@@ -167,9 +237,68 @@ public class MiaoShaController implements InitializingBean {
     
     
     /**
+     * 为每个登录用户单独生成秒杀url路径
+     *
+     * @param request
+     * @param user
+     * @param goodsId
+     * @param verifyCode
+     * @return
+     */
+    @RequestMapping(value = "/path", method = RequestMethod.GET)
+    @ResponseBody
+    public Result<String> getMiaoShaPath(HttpServletRequest request, User user, @RequestParam("goodsId") long goodsId,
+                                         @RequestParam(value = "verifyCode", defaultValue = "0") int verifyCode) {
+        if (user == null) {
+            return Result.error(CodeMsg.SESSION_ERROR);
+        }
+        // 阻塞式获取令牌
+        rateLimiter.acquire();
+        //检查验证码
+        boolean check = miaoShaService.checkVerifyCode(user, goodsId, verifyCode);
+        if (!check) {
+            return Result.error(CodeMsg.REQUEST_ILLEGAL);
+        }
+        //生成秒杀路径
+        String path = miaoShaService.createMiaoShaPath(user, goodsId);
+        
+        return Result.success(path);
+    }
+    
+    /**
+     * 生成验证码图片
+     *
+     * @param response
+     * @param user
+     * @param goodsId
+     * @return
+     */
+    @RequestMapping(value = "/verifyCode", method = RequestMethod.GET)
+    @ResponseBody
+    public Result<String> getMiaoshaVerifyCod(HttpServletResponse response, User user,
+                                              @RequestParam("goodsId") long goodsId) {
+        if (user == null) {
+            return Result.error(CodeMsg.SESSION_ERROR);
+        }
+        try {
+            BufferedImage image = miaoShaService.createVerifyCode(user, goodsId);
+            OutputStream out = response.getOutputStream();
+            ImageIO.write(image, "JPEG", out);
+            out.flush();
+            out.close();
+            return null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Result.error(CodeMsg.REQUEST_ILLEGAL);
+        }
+    }
+    
+    
+    /**
      * orderId :成功
      * -1 :秒杀失败
      * 0 :排队中
+     *
      * @param model
      * @param user
      * @param goodsId
@@ -178,11 +307,11 @@ public class MiaoShaController implements InitializingBean {
     @RequestMapping("/result")
     @ResponseBody
     public Result<Long> miaoShaResult(Model model, User user, @RequestParam("goodsId") long goodsId) {
-        if (user == null){
+        if (user == null) {
             return Result.error(CodeMsg.SESSION_ERROR);
         }
         
-        long result = miaoShaService.getMiaoShaResult(user.getId() , goodsId);
+        long result = miaoShaService.getMiaoShaResult(user.getId(), goodsId);
         return Result.success(result);
         
     }

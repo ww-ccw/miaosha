@@ -45,7 +45,17 @@ public enum Prefix {
      */
     Goods_StockCount("goods_stockCount_"),
     
+    /**
+     * 验证码
+     * VerifyCode_ + userId + goodsId
+     */
+    VerifyCode("verifyCode_"),
     
+    /**
+     * 计数器
+     * access
+     */
+    Access("access"),
     ;
     
     

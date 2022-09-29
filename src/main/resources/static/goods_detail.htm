@@ -66,10 +66,11 @@
                 </form>-->
 
                 <!--v2及v3:配合静态化订单使用 , 使用ajax秒杀 , 成功后跳转到 order_detail.htm , 再使用ajax进行初始化-->
-                <button class="btn btn-primary" type="button" id="buyButton"onclick="do_MiaoSha()">立即秒杀</button>
-                <input type="hidden" name="goodsId"  id="goodsId" />
+                <!--<button class="btn btn-primary" type="button" id="buyButton"onclick="do_MiaoSha()">立即秒杀</button>
+                <input type="hidden" name="goodsId"  id="goodsId" />-->
+
                 <!--v4:使用动态链接、验证码、rabbitmq轮询-->
-                <!--<div class="row">
+                <div class="row">
                     <div class="form-inline">
                         <img id="verifyCodeImg" width="80" height="32" style="display:none"
                              onclick="refreshVerifyCode()"/>
@@ -77,7 +78,7 @@
                         <button class="btn btn-primary" type="button" id="buyButton" onclick="getMiaoshaPath()">立即秒杀</button>
                     </div>
                 </div>
-                <input type="hidden" name="goodsId" id="goodsId"/>-->
+                <input type="hidden" name="goodsId" id="goodsId"/>
 
             </td>
         </tr>
