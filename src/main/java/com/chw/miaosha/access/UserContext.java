@@ -24,7 +24,6 @@ public class UserContext {
     
     /**
      * 得到变量
-     * @param user
      */
     public static User getUser() {
         return userHolder.get();
